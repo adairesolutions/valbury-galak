@@ -8,7 +8,7 @@ moment.updateLocale('en', {
   ]
 });
 
-function DateMaster() {
+function FetchFileName() {
   var date = new Date();
   var dateclean = moment(date).locale('en').format('DD');
   var monthclean = moment(date).locale('en').format('MMM');
@@ -27,4 +27,4 @@ function DateMaster() {
   });
 }
 
-DateMaster();
+FetchFileName();
