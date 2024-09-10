@@ -16,12 +16,29 @@ async function FetchtheSignal() {
       throw new Error(`Response status: ${response.status}`);
     }
     const json = await response.json();
-    datenow = new Date(json['dateTime']);
+    var datenow = new Date(json['dateTime']);
   } catch (error) {
     console.error(error.message);
   }
 
+  const urlbulletin = "https://86c7czpmn0.execute-api.us-east-1.amazonaws.com/valbury-bulletin";
+  try {
+    const response = await fetch(urlbulletin);
+    if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+    }
+    const json = await response.json();
+    var xau = json;
+  } catch (error) {
+    console.error(error.message);
+  }
+
+  const xausig = xau['document']['xauusd_signals'];
+  const countbuy = xausig.filter(item => item.order === 'buy').length;
+  const countsell = xausig.filter(item => item.order === 'sell').length;
+
   var date = datenow;
+  var signalid = countbuy + countsell - 1;
   var dateclean = moment(date).locale('en').format('DD');
   var monthclean = moment(date).locale('en').format('MMM');
   var yearclean = moment(date).locale('en').format('YYYY');
@@ -49,6 +66,7 @@ async function FetchtheSignal() {
       var signaltp1 = pdfResult.substring(125, 132);
       var signaltp2 = pdfResult.substring(178, 186);
       var xausignalobj = {
+        'id': signalid,
         'date': signaldate,
         'order': signalorder,
         'price': signalprice,
