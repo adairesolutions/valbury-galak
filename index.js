@@ -8,7 +8,7 @@ moment.updateLocale('en', {
   ]
 });
 
-async function FetchFileName() {
+async function FetchtheSignal() {
   const url = "https://timeapi.io/api/time/current/zone?timeZone=Asia%2FJakarta";
   try {
     const response = await fetch(url);
@@ -35,20 +35,20 @@ async function FetchFileName() {
       return;
     }
 
-    var pdfLength = JSON.stringify(pages.slice(3, -3)).length;
-    var pdfText = JSON.stringify(pages.slice(3, -3));
-    // console.log(pdfText);
+    var pdfResult = JSON.stringify(pages[4].slice(0, -212));
+    var pdfResultLength = pdfResult.length;
+    // console.log(pdfResult);
 
-    if (pdfLength = 872) {
-      // EURUSD
-      var eurusd_signals = [];
+    if (pdfResultLength = 206) {
+      // XAUUSD
+      var xauusd_signals = [];
       var signaldate = moment(date).locale('id').format('MM/DD/YY').toString();
-      var signalorder = JSON.stringify(pages.slice(3, -3)).substring(2, 6).toLocaleLowerCase();
-      var signalprice = JSON.stringify(pages.slice(3, -3)).substring(18, 25);
-      var signalsl = JSON.stringify(pages.slice(3, -3)).substring(71, 78);
-      var signaltp1 = JSON.stringify(pages.slice(3, -3)).substring(125, 132);
-      var signaltp2 = JSON.stringify(pages.slice(3, -3)).substring(178, 185);
-      var eursignalobj = {
+      var signalorder = pdfResult.substring(1, 5).toLocaleLowerCase();
+      var signalprice = pdfResult.substring(17, 24);
+      var signalsl = pdfResult.substring(71, 78);
+      var signaltp1 = pdfResult.substring(125, 132);
+      var signaltp2 = pdfResult.substring(178, 186);
+      var xausignalobj = {
         'date': signaldate,
         'order': signalorder,
         'price': signalprice,
@@ -56,29 +56,12 @@ async function FetchFileName() {
         'takeprofit1': signaltp1,
         'takeprofit2': signaltp2,
       }
-      eurusd_signals.push(eursignalobj);
-      console.log(eurusd_signals);
-    } else if (pdfLength = 879) {
-      // EURUSD
-      var eurusd_signals = [];
-      var signaldate = moment(date).locale('id').format('MM/DD/YY').toString();
-      var signalorder = JSON.stringify(pages.slice(3, -3)).substring(2, 6).toLocaleLowerCase();
-      var signalprice = JSON.stringify(pages.slice(3, -3)).substring(18, 25);
-      var signalsl = JSON.stringify(pages.slice(3, -3)).substring(71, 78);
-      var signaltp1 = JSON.stringify(pages.slice(3, -3)).substring(125, 132);
-      var signaltp2 = JSON.stringify(pages.slice(3, -3)).substring(178, 185);
-      var eursignalobj = {
-        'date': signaldate,
-        'order': signalorder,
-        'price': signalprice,
-        'stoploss': signalsl,
-        'takeprofit1': signaltp1,
-        'takeprofit2': signaltp2,
-      }
-      eurusd_signals.push(eursignalobj);
-      console.log(eurusd_signals);
+      xauusd_signals.push(xausignalobj);
+      console.log(xauusd_signals);
+    } else {
+      console.log("No case, well done!");
     }
   });
 }
 
-FetchFileName();
+FetchtheSignal();
