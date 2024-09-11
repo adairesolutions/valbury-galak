@@ -1,11 +1,24 @@
 const moment = require('moment');
 const extract = require('pdf-text-extract');
+const { MongoClient, ServerApiVersion } = require('mongodb');
+if (typeof localStorage === "undefined" || localStorage === null) {
+  var LocalStorage = require('node-localstorage').LocalStorage;
+  localStorage = new LocalStorage('./scratch');
+}
 
 moment.updateLocale('en', {
   monthsShort: [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "AUG", "Sept", "Oct", "Nov", "Dec"
   ]
+});
+
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  }
 });
 
 async function FetchtheSignal() {
@@ -33,53 +46,78 @@ async function FetchtheSignal() {
     console.error(error.message);
   }
 
-  const xausig = xau['document']['xauusd_signals'];
-  const countbuy = xausig.filter(item => item.order === 'buy').length;
-  const countsell = xausig.filter(item => item.order === 'sell').length;
+  if (xau == undefined || xau.length == 0) {
+    console.log('Could not find Previous signal data.');
+  } else {
+    const xausig = xau['document']['xauusd_signals'];
+    const countbuy = xausig.filter(item => item.order === 'buy').length;
+    const countsell = xausig.filter(item => item.order === 'sell').length;
 
-  var date = datenow;
-  var signalid = countbuy + countsell - 1;
-  var dateclean = moment(date).locale('en').format('DD');
-  var monthclean = moment(date).locale('en').format('MMM');
-  var yearclean = moment(date).locale('en').format('YYYY');
-  var outlookname = dateclean + '_' + monthclean + '_' + yearclean + '_' + 'DAILY_MARKET_OUTLOOK_';
-  const path = require('path');
-  const filePath = path.join(__dirname, './market-outlook/' + outlookname + '.pdf');
+    var date = datenow;
+    var signaldate = moment(date).locale('id').format('MM/DD/YY').toString();
 
-  extract(filePath, function (err, pages) {
-    if (err) {
-      console.log(err);
-      return;
-    }
-
-    var pdfResult = JSON.stringify(pages[4].slice(0, -212));
-    var pdfResultLength = pdfResult.length;
-    // console.log(pdfResult);
-
-    if (pdfResultLength = 206) {
-      // XAUUSD
-      var xauusd_signals = [];
-      var signaldate = moment(date).locale('id').format('MM/DD/YY').toString();
-      var signalorder = pdfResult.substring(1, 5).toLocaleLowerCase();
-      var signalprice = pdfResult.substring(17, 24);
-      var signalsl = pdfResult.substring(71, 78);
-      var signaltp1 = pdfResult.substring(125, 132);
-      var signaltp2 = pdfResult.substring(178, 186);
-      var xausignalobj = {
-        'id': signalid,
-        'date': signaldate,
-        'order': signalorder,
-        'price': signalprice,
-        'stoploss': signalsl,
-        'takeprofit1': signaltp1,
-        'takeprofit2': signaltp2,
-      }
-      xauusd_signals.push(xausignalobj);
-      console.log(xauusd_signals);
+    if (xausig.pop()['date'] === signaldate) {
+      console.log('Signal has been updated.');
     } else {
-      console.log("No case, well done!");
+      var signalid = countbuy + countsell;
+      var dateclean = moment(date).locale('en').format('DD');
+      var monthclean = moment(date).locale('en').format('MMM');
+      var yearclean = moment(date).locale('en').format('YYYY');
+      var outlookname = dateclean + '_' + monthclean + '_' + yearclean + '_' + 'DAILY_MARKET_OUTLOOK_';
+      const path = require('path');
+      const filePath = path.join(__dirname, './market-outlook/' + outlookname + '.pdf');
+
+      extract(filePath, function (err, pages) {
+        if (err) {
+          console.log(err);
+          return;
+        }
+
+        var pdfResult = JSON.stringify(pages[4].slice(0, -212));
+        var pdfResultLength = pdfResult.length;
+        // console.log(pdfResult);
+
+        if (pdfResultLength = 206) {
+          // XAUUSD
+          var xauusd_signals = [];
+          var signalorder = pdfResult.substring(1, 5).toLocaleLowerCase();
+          var signalprice = pdfResult.substring(17, 24);
+          var signalsl = pdfResult.substring(71, 78);
+          var signaltp1 = pdfResult.substring(125, 132);
+          var signaltp2 = pdfResult.substring(178, 186);
+          var xausignalobj = {
+            'xauusd_signals': [{
+              'id': signalid,
+              'date': signaldate,
+              'order': signalorder,
+              'price': signalprice,
+              'stoploss': signalsl,
+              'takeprofit1': signaltp1,
+              'takeprofit2': signaltp2
+            }]
+          }
+          xauusd_signals.push(xausignalobj);
+          // console.log(xauusd_signals);
+          localStorage.setItem('sigdata', JSON.stringify(xauusd_signals));
+        } else {
+          console.log("No case, well done!");
+        }
+      });
     }
-  });
+  }
+}
+
+async function run() {
+  var sigdata = localStorage.getItem('sigdata');
+  console.log(JSON.parse(sigdata)[0]);
+  try {
+    await client.connect();
+    await client.db("valbury").command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+  } finally {
+    await client.close();
+  }
 }
 
 FetchtheSignal();
+run().catch(console.dir);
