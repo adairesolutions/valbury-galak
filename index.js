@@ -54,9 +54,10 @@ async function FetchtheSignal() {
     const countsell = xausig.filter(item => item.order === 'sell').length;
 
     var date = datenow;
-    var signaldate = moment(date).locale('id').format('MM/DD/YY').toString();
+    var signaldate = moment(date).locale('id').format('MM/DD/YYYY').toString();
+    var datadate = xausig.pop()['date'].toString();
 
-    if (xausig.pop()['date'] === signaldate) {
+    if (signaldate == datadate) {
       console.log('Signal has been updated.');
     } else {
       var signalid = countbuy + countsell;
@@ -99,6 +100,8 @@ async function FetchtheSignal() {
           xauusd_signals.push(xausignalobj);
           // console.log(xauusd_signals);
           localStorage.setItem('sigdata', JSON.stringify(xauusd_signals));
+          // Add
+          Uploadthesig().catch(console.dir);
         } else {
           console.log("No case, well done!");
         }
@@ -107,17 +110,31 @@ async function FetchtheSignal() {
   }
 }
 
-async function run() {
+async function Uploadthesig() {
   var sigdata = localStorage.getItem('sigdata');
-  console.log(JSON.parse(sigdata)[0]);
+  insertsig = JSON.parse(sigdata)[0]['xauusd_signals'][0];
+  // console.log(insertsig[0]);
   try {
     await client.connect();
-    await client.db("valbury").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    const db = client.db('valbury');
+    const collection = db.collection('xauusd_signals');
+    await collection.updateOne(
+      {
+        "provider": "vaf"
+      },
+      {
+        $push: {
+          "xauusd_signals": {
+            "id": insertsig.id, "date": insertsig.date, "order": insertsig.order, "price": insertsig.price, "stoploss": insertsig.stoploss, "takeprofit1": insertsig.takeprofit1, "takeprofit2": insertsig.takeprofit2
+          }
+        }
+      }
+    );
   } finally {
     await client.close();
   }
+
+  localStorage.clear();
 }
 
 FetchtheSignal();
-run().catch(console.dir);
