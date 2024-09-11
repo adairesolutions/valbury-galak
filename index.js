@@ -2,12 +2,13 @@ const moment = require('moment');
 const download = require('url-download');
 const extract = require('pdf-text-extract');
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const uri = "mongodb+srv://geraldzandisko:Ah7klEx0MBidohg2@adairesolution-cluster.86e4g.mongodb.net/?retryWrites=true&w=majority&appName=adairesolution-cluster";
 if (typeof localStorage === "undefined" || localStorage === null) {
   var LocalStorage = require('node-localstorage').LocalStorage;
   localStorage = new LocalStorage('./scratch');
 }
 
-moment.updateLocale('en', {
+moment.updateLocale('in', {
   monthsShort: [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "AUG", "Sept", "Oct", "Nov", "Dec"
@@ -57,9 +58,9 @@ async function FetchtheSignal() {
     var date = datenow;
     var signaldate = moment(date).locale('id').format('MM/DD/YYYY').toString();
     var datadate = xausig.pop()['date'].toString();
-    var dateclean = moment(date).locale('en').format('DD');
-    var monthclean = moment(date).locale('en').format('MMM');
-    var yearclean = moment(date).locale('en').format('YYYY');
+    var dateclean = moment(date).locale('id').format('DD');
+    var monthclean = moment(date).locale('id').format('MMM');
+    var yearclean = moment(date).locale('id').format('YYYY');
 
     let downloadPDF = new Promise((resolve, reject) => {
       download('https://research.valbury.co.id/resources/files/vaf/' + dateclean + '_' + monthclean + '_' + yearclean + '_DAILY_MARKET_OUTLOOK_.pdf', './market-outlook')
