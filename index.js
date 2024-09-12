@@ -84,6 +84,7 @@ async function FetchtheSignal() {
     var dateclean = moment(date).locale('id').format('DD');
     var monthclean = moment(date).locale('id').format('MMM');
     var yearclean = moment(date).locale('id').format('YYYY');
+
     if (signaldate == datadate) {
       console.log('Signal has been updated.');
     } else {
@@ -91,13 +92,16 @@ async function FetchtheSignal() {
       var outlookname = dateclean + '_' + monthclean + '_' + yearclean + '_' + 'DAILY_MARKET_OUTLOOK_';
       const path = require('path');
       const filePath = path.join(__dirname, './market-outlook/' + outlookname + '.pdf');
+
       extract(filePath, function (err, pages) {
         if (err) {
           console.log(err);
           return;
         }
+
         var pdfResult = JSON.stringify(pages[4].slice(0, -212));
         var pdfResultLength = pdfResult.length;
+
         if (pdfResultLength === 206) {
           // XAUUSD
           var xauusd_signals = [];
@@ -117,6 +121,7 @@ async function FetchtheSignal() {
               'takeprofit2': signaltp2
             }]
           }
+
           xauusd_signals.push(xausignalobj);
           localStorage.setItem('sigdata', JSON.stringify(xauusd_signals));
           Uploadthesig().catch(console.dir);
@@ -139,6 +144,7 @@ async function FetchtheSignal() {
               'takeprofit2': signaltp2
             }]
           }
+
           xauusd_signals.push(xausignalobj);
           localStorage.setItem('sigdata', JSON.stringify(xauusd_signals));
           Uploadthesig().catch(console.dir);
@@ -153,6 +159,7 @@ async function FetchtheSignal() {
 async function Uploadthesig() {
   var sigdata = localStorage.getItem('sigdata');
   insertsig = JSON.parse(sigdata)[0]['xauusd_signals'][0];
+  
   try {
     await client.connect();
     const db = client.db('valbury');
