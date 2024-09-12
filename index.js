@@ -3,6 +3,7 @@ const download = require('url-download');
 const extract = require('pdf-text-extract');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = "mongodb+srv://geraldzandisko:Ah7klEx0MBidohg2@adairesolution-cluster.86e4g.mongodb.net/?retryWrites=true&w=majority&appName=adairesolution-cluster";
+const fs = require('fs')
 if (typeof localStorage === "undefined" || localStorage === null) {
   var LocalStorage = require('node-localstorage').LocalStorage;
   localStorage = new LocalStorage('./scratch');
@@ -42,10 +43,21 @@ const client = new MongoClient(uri, {
     var monthget = moment(date).locale('id').format('MMM');
     var yearget = moment(date).locale('id').format('YYYY');
 
-    download('https://research.valbury.co.id/resources/files/vaf/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf', './market-outlook')
-      .on('close', function () {
+    const path = './market-outlook/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf';
+
+    fs.access(path, fs.F_OK, (err) => {
+      if (err) {
+        console.error(err)
+        return
+      } else if (err == null) {
         console.log('Signal report has been downloaded.');
-      });
+      } else if (err.code === 'ENOENT') {
+        download('https://research.valbury.co.id/resources/files/vaf/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf', './market-outlook')
+          .on('close', function () {
+            console.log('Report downloaded.');
+          });
+      }
+    });
   };
 
   const getSignal = async () => {
@@ -85,8 +97,6 @@ const client = new MongoClient(uri, {
       var dateclean = moment(date).locale('id').format('DD');
       var monthclean = moment(date).locale('id').format('MMM');
       var yearclean = moment(date).locale('id').format('YYYY');
-      console.log(signaldate);
-      console.log(datadate);
 
       if (signaldate === datadate) {
         console.log('Signal has been updated.');
