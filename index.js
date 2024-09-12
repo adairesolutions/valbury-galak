@@ -3,7 +3,8 @@ const download = require('url-download');
 const extract = require('pdf-text-extract');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = "mongodb+srv://geraldzandisko:Ah7klEx0MBidohg2@adairesolution-cluster.86e4g.mongodb.net/?retryWrites=true&w=majority&appName=adairesolution-cluster";
-const fs = require('fs')
+const fs = require('fs');
+const axios = require('axios');
 if (typeof localStorage === "undefined" || localStorage === null) {
   var LocalStorage = require('node-localstorage').LocalStorage;
   localStorage = new LocalStorage('./scratch');
@@ -51,7 +52,7 @@ const client = new MongoClient(uri, {
         return;
       } else if (err == null) {
         console.log('Signal report has been downloaded.');
-        return;
+        getSignal();
       } else if (err.code === 'ENOENT') {
         download('https://research.valbury.co.id/resources/files/vaf/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf', './market-outlook')
           .on('close', function () {
@@ -78,100 +79,119 @@ async function getSignal() {
     console.error(error.message);
   }
 
-  const urlbulletin = "https://86c7czpmn0.execute-api.us-east-1.amazonaws.com/valbury-bulletin";
-  try {
-    const response = await fetch(urlbulletin);
-    if (!response.ok) {
-      throw new Error(`Response status: ${response.status}`);
+  var data = JSON.stringify({
+    "collection": "xauusd_signals",
+    "database": "valbury",
+    "dataSource": "adairesolution-cluster",
+    "projection": {
+      "_id": 0,
+      "xauusd_signals": 1
     }
-    const json = await response.json();
-    var xau = json;
-  } catch (error) {
-    console.error(error.message);
-  }
+  });
 
-  if (xau == undefined || xau.length == 0) {
-    console.log('Could not find Previous signal data.');
-  } else {
-    const xausig = xau['document']['xauusd_signals'];
-    const countbuy = xausig.filter(item => item.order === 'buy').length;
-    const countsell = xausig.filter(item => item.order === 'sell').length;
-    var date = datenow;
-    var signaldate = moment(date).locale('id').format('MM/DD/YYYY').toString();
-    var datadate = xausig.pop()['date'].toString();
-    var dateclean = moment(date).locale('id').format('DD');
-    var monthclean = moment(date).locale('id').format('MMM');
-    var yearclean = moment(date).locale('id').format('YYYY');
+  var config = {
+    method: 'post',
+    url: 'https://data.mongodb-api.com/app/data-hocylaq/endpoint/data/v1/action/findOne',
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Request-Headers': '*',
+      'api-key': 'cnGPLA3XjThub3qvYVwztREUrCTkmXbm4Jmfo1313LkcfU24FILAZq5LbZ2Dv9nc'
+    },
+    data: data
+  };
 
-    if (signaldate === datadate) {
-      console.log('Signal has been updated.');
-    } else {
-      var signalid = countbuy + countsell;
-      var outlookname = dateclean + '_' + monthclean + '_' + yearclean + '_' + 'DAILY_MARKET_OUTLOOK_';
-      const path = require('path');
-      const filePath = path.join(__dirname, './market-outlook/' + outlookname + '.pdf');
+  axios(config)
+    .then(function (response) {
+      var valburysignal = response.data;
+      var valburyjson = JSON.stringify(valburysignal);
+      var valburyparse = JSON.parse(valburyjson)['document']['xauusd_signals'];
 
-      extract(filePath, function (err, pages) {
-        if (err) {
-          console.log(err);
-          return;
-        }
+      if (valburyparse == undefined || valburyparse.length == 0) {
+        console.log('Could not find Previous signal data.');
+      } else {
+        const xausig = JSON.parse(valburyjson)['document']['xauusd_signals'];
+        const countbuy = xausig.filter(item => item.order === 'buy').length;
+        const countsell = xausig.filter(item => item.order === 'sell').length;
+        var date = datenow;
+        var signaldate = moment(date).locale('id').format('MM/DD/YYYY').toString();
+        var datadate = xausig.pop()['date'].toString();
+        var dateclean = moment(date).locale('id').format('DD');
+        var monthclean = moment(date).locale('id').format('MMM');
+        var yearclean = moment(date).locale('id').format('YYYY');
 
-        var pdfResult = JSON.stringify(pages[4].slice(0, -212));
-        var pdfResultLength = pdfResult.length;
-
-        if (pdfResultLength === 206) {
-          // XAUUSD
-          var xauusd_signals = [];
-          var signalorder = pdfResult.substring(1, 5).toLocaleLowerCase();
-          var signalprice = pdfResult.substring(17, 24);
-          var signalsl = pdfResult.substring(71, 78);
-          var signaltp1 = pdfResult.substring(125, 132);
-          var signaltp2 = pdfResult.substring(178, 186);
-          var xausignalobj = {
-            'xauusd_signals': [{
-              'id': signalid,
-              'date': signaldate,
-              'order': signalorder,
-              'price': signalprice,
-              'stoploss': signalsl,
-              'takeprofit1': signaltp1,
-              'takeprofit2': signaltp2
-            }]
-          }
-
-          xauusd_signals.push(xausignalobj);
-          localStorage.setItem('sigdata', JSON.stringify(xauusd_signals));
-          Uploadthesig().catch(console.dir);
-        } else if (pdfResultLength === 214) {
-          // XAUUSD
-          var xauusd_signals = [];
-          var signalorder = pdfResult.substring(1, 4).toLocaleLowerCase();
-          var signalprice = pdfResult.substring(17, 24);
-          var signalsl = pdfResult.substring(71, 78);
-          var signaltp1 = pdfResult.substring(125, 132);
-          var signaltp2 = pdfResult.substring(179, 186);
-          var xausignalobj = {
-            'xauusd_signals': [{
-              'id': signalid,
-              'date': signaldate,
-              'order': signalorder,
-              'price': signalprice,
-              'stoploss': signalsl,
-              'takeprofit1': signaltp1,
-              'takeprofit2': signaltp2
-            }]
-          }
-
-          xauusd_signals.push(xausignalobj);
-          localStorage.setItem('sigdata', JSON.stringify(xauusd_signals));
-          Uploadthesig().catch(console.dir);
+        if (signaldate === datadate) {
+          console.log('Signal has been updated.');
         } else {
-          console.log("No case, well done!");
+          var signalid = countbuy + countsell;
+          var outlookname = dateclean + '_' + monthclean + '_' + yearclean + '_' + 'DAILY_MARKET_OUTLOOK_';
+          const path = require('path');
+          const filePath = path.join(__dirname, './market-outlook/' + outlookname + '.pdf');
+
+          extract(filePath, function (err, pages) {
+            if (err) {
+              console.log(err);
+              return;
+            }
+
+            var pdfResult = JSON.stringify(pages[4].slice(0, -212));
+            var pdfResultLength = pdfResult.length;
+
+            if (pdfResultLength === 206) {
+              // XAUUSD
+              var xauusd_signals = [];
+              var signalorder = pdfResult.substring(1, 5).toLocaleLowerCase();
+              var signalprice = pdfResult.substring(17, 24);
+              var signalsl = pdfResult.substring(71, 78);
+              var signaltp1 = pdfResult.substring(125, 132);
+              var signaltp2 = pdfResult.substring(178, 186);
+              var xausignalobj = {
+                'xauusd_signals': [{
+                  'id': signalid,
+                  'date': signaldate,
+                  'order': signalorder,
+                  'price': signalprice,
+                  'stoploss': signalsl,
+                  'takeprofit1': signaltp1,
+                  'takeprofit2': signaltp2
+                }]
+              }
+
+              xauusd_signals.push(xausignalobj);
+              localStorage.setItem('sigdata', JSON.stringify(xauusd_signals));
+              Uploadthesig().catch(console.dir);
+            } else if (pdfResultLength === 214) {
+              // XAUUSD
+              var xauusd_signals = [];
+              var signalorder = pdfResult.substring(1, 4).toLocaleLowerCase();
+              var signalprice = pdfResult.substring(17, 24);
+              var signalsl = pdfResult.substring(71, 78);
+              var signaltp1 = pdfResult.substring(125, 132);
+              var signaltp2 = pdfResult.substring(179, 186);
+              var xausignalobj = {
+                'xauusd_signals': [{
+                  'id': signalid,
+                  'date': signaldate,
+                  'order': signalorder,
+                  'price': signalprice,
+                  'stoploss': signalsl,
+                  'takeprofit1': signaltp1,
+                  'takeprofit2': signaltp2
+                }]
+              }
+
+              xauusd_signals.push(xausignalobj);
+              localStorage.setItem('sigdata', JSON.stringify(xauusd_signals));
+              Uploadthesig().catch(console.dir);
+            } else {
+              console.log("No case, well done!");
+            }
+          });
         }
-      });
-    }
-  }
+      }
+    })
+    .catch(function (error) {
+      console.log(error);
+    });
 };
 
 async function Uploadthesig() {
