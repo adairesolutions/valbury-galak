@@ -9,14 +9,14 @@ if (typeof localStorage === "undefined" || localStorage === null) {
   var LocalStorage = require('node-localstorage').LocalStorage;
   localStorage = new LocalStorage('./scratch');
 }
-
+// Moment Configuration
 moment.updateLocale('id', {
   monthsShort: [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "AUG", "Sept", "Oct", "Nov", "Dec"
   ]
 });
-
+// MongoDB Connect
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -24,9 +24,10 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
-
+// Functions
 (async () => {
   const getPDF = async () => {
+    // Get Time and Date
     const url = "https://timeapi.io/api/time/current/zone?timeZone=Asia%2FJakarta";
     try {
       const response = await fetch(url);
@@ -38,35 +39,42 @@ const client = new MongoClient(uri, {
     } catch (error) {
       console.error(error.message);
     }
-
+    // Reformat Time and Date
     var date = datepdf;
     var dateget = moment(date).locale('id').format('DD');
     var monthget = moment(date).locale('id').format('MMM');
     var yearget = moment(date).locale('id').format('YYYY');
-
-    const path = './market-outlook/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf';
-
-    fs.access(path, fs.F_OK, (err) => {
-      if (err) {
-        console.error(err);
-        return;
-      } else if (err == null) {
-        console.log('Signal report has been downloaded.');
-        getSignal();
-      } else if (err.code === 'ENOENT') {
-        download('https://research.valbury.co.id/resources/files/vaf/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf', './market-outlook')
-          .on('close', function () {
-            console.log('Report downloaded.');
-          });
-        getSignal();
-      }
-    });
+    var dayget = moment(date).locale('id').format('dddd');
+    if (dayget === 'Sabtu' || dayget === 'Minggu') {
+      console.log("Market libur");
+      return;
+    } else {
+      // Get Outlook Folder Path
+      const path = './market-outlook/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf';
+      fs.access(path, fs.F_OK, (err) => {
+        if (err == null) {
+          console.log('Signal report has been downloaded.');
+          return
+        } else {
+          console.log('Signal report is not exist for this day, downloading.');
+          // Downloading Data
+          download('https://research.valbury.co.id/resources/files/vaf/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf', './market-outlook')
+            .on('close', function () {
+              console.log('Report downloaded.');
+            });
+          console.log('Download complete!');
+          console.log('Proceeding inserting signal data to database.');
+          getSignal();
+        }
+      });
+    }
   };
-
+  // Run Function
   getPDF();
 })();
 
 async function getSignal() {
+  // Get Time and Date
   const url = "https://timeapi.io/api/time/current/zone?timeZone=Asia%2FJakarta";
   try {
     const response = await fetch(url);
@@ -78,7 +86,7 @@ async function getSignal() {
   } catch (error) {
     console.error(error.message);
   }
-
+  // Get Previous Signal Data
   var data = JSON.stringify({
     "collection": "xauusd_signals",
     "database": "valbury",
@@ -88,7 +96,7 @@ async function getSignal() {
       "xauusd_signals": 1
     }
   });
-
+  // MongoDB Configs
   var config = {
     method: 'post',
     url: 'https://data.mongodb-api.com/app/data-hocylaq/endpoint/data/v1/action/findOne',
@@ -99,13 +107,13 @@ async function getSignal() {
     },
     data: data
   };
-
+  // Axios Configs
   axios(config)
     .then(function (response) {
       var valburysignal = response.data;
       var valburyjson = JSON.stringify(valburysignal);
+      // Signal Array
       var valburyparse = JSON.parse(valburyjson)['document']['xauusd_signals'];
-
       if (valburyparse == undefined || valburyparse.length == 0) {
         console.log('Could not find Previous signal data.');
       } else {
@@ -118,26 +126,23 @@ async function getSignal() {
         var dateclean = moment(date).locale('id').format('DD');
         var monthclean = moment(date).locale('id').format('MMM');
         var yearclean = moment(date).locale('id').format('YYYY');
-
         if (signaldate === datadate) {
           console.log('Signal has been updated.');
         } else {
           var signalid = countbuy + countsell;
           var outlookname = dateclean + '_' + monthclean + '_' + yearclean + '_' + 'DAILY_MARKET_OUTLOOK_';
           const path = require('path');
+          // Extract PDF
           const filePath = path.join(__dirname, './market-outlook/' + outlookname + '.pdf');
-
           extract(filePath, function (err, pages) {
             if (err) {
               console.log(err);
               return;
             }
-
             var pdfResult = JSON.stringify(pages[4].slice(0, -212));
             var pdfResultLength = pdfResult.length;
-
             if (pdfResultLength === 206) {
-              // XAUUSD
+              // XAUUSD Sell
               var xauusd_signals = [];
               var signalorder = pdfResult.substring(1, 5).toLocaleLowerCase();
               var signalprice = pdfResult.substring(17, 24);
@@ -155,12 +160,11 @@ async function getSignal() {
                   'takeprofit2': signaltp2
                 }]
               }
-
               xauusd_signals.push(xausignalobj);
               localStorage.setItem('sigdata', JSON.stringify(xauusd_signals));
               Uploadthesig().catch(console.dir);
             } else if (pdfResultLength === 214) {
-              // XAUUSD
+              // XAUUSD Buy
               var xauusd_signals = [];
               var signalorder = pdfResult.substring(1, 4).toLocaleLowerCase();
               var signalprice = pdfResult.substring(17, 24);
@@ -178,7 +182,6 @@ async function getSignal() {
                   'takeprofit2': signaltp2
                 }]
               }
-
               xauusd_signals.push(xausignalobj);
               localStorage.setItem('sigdata', JSON.stringify(xauusd_signals));
               Uploadthesig().catch(console.dir);
@@ -197,7 +200,6 @@ async function getSignal() {
 async function Uploadthesig() {
   var sigdata = localStorage.getItem('sigdata');
   insertsig = JSON.parse(sigdata)[0]['xauusd_signals'][0];
-
   try {
     await client.connect();
     const db = client.db('valbury');
