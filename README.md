@@ -6,6 +6,9 @@ Fetch PT. VAF's daily trading suggestions.
 - Gerald Zandisko
 
 ## Solution Stack
+
+<br />
+
 <div>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg" width="100">
@@ -13,5 +16,7 @@ Fetch PT. VAF's daily trading suggestions.
     <img alt="webpack logo" src="https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg">
   <picture>
 </div>
+
+<br />
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
