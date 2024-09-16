@@ -60,9 +60,11 @@ const client = new MongoClient(uri, {
           // Downloading Data
           download('https://research.valbury.co.id/resources/files/vaf/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf', './market-outlook')
             .on('close', function () {
-              console.log('Download completed!');
+              console.log('Download almost done...');
+            })
+            .on('done', function () {
+              console.log('Download complete. Proceeding inserting signal data to database.');
             });
-          console.log('Proceeding inserting signal data to database.');
         }
       });
     }
@@ -131,8 +133,8 @@ const client = new MongoClient(uri, {
             const filePath = path.join(__dirname, './market-outlook/' + outlookname + '.pdf');
             extract(filePath, function (err, pages) {
               if (err) {
-                console.log('Something bad happened.');
-                return;
+                console.log('Something bad happened. Rerun script.');
+                getSignal();
               }
               var pdfResult = JSON.stringify(pages[4].slice(0, -212));
               var pdfResultLength = pdfResult.length;
