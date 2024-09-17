@@ -9,6 +9,7 @@ if (typeof localStorage === "undefined" || localStorage === null) {
   var LocalStorage = require('node-localstorage').LocalStorage;
   localStorage = new LocalStorage('./scratch');
 }
+
 // Moment Configuration
 moment.updateLocale('id', {
   monthsShort: [
@@ -16,6 +17,7 @@ moment.updateLocale('id', {
     "Jul", "AUG", "Sept", "Oct", "Nov", "Dec"
   ]
 });
+
 // MongoDB Connect
 const client = new MongoClient(uri, {
   serverApi: {
@@ -24,6 +26,7 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+
 // Functions
 (async () => {
   const getPDF = async () => {
@@ -90,7 +93,9 @@ const client = new MongoClient(uri, {
       "dataSource": "adairesolution-cluster",
       "projection": {
         "_id": 0,
-        "xauusd_signals": 1
+        "xauusd_signals": 1,
+        "clr_signals": 1,
+        "usdjpy_signals": 1
       }
     });
     // MongoDB Configs
@@ -110,9 +115,14 @@ const client = new MongoClient(uri, {
         var valburysignal = response.data;
         var valburyjson = JSON.stringify(valburysignal);
         // Signal Array
+        // XAUUSD
         var valburyparse = JSON.parse(valburyjson)['document']['xauusd_signals'];
+        // Crude Oil
+        var clrparse = JSON.parse(valburyjson)['document']['clr_signals'];
+        // USDJPY
+        var ujpyparse = JSON.parse(valburyjson)['document']['usdjpy_signals'];
         if (valburyparse == undefined || valburyparse.length == 0) {
-          console.log('Could not find Previous signal data.');
+          console.log('Could not find previous XAUUSD signal data.');
         } else {
           const xausig = JSON.parse(valburyjson)['document']['xauusd_signals'];
           const countbuy = xausig.filter(item => item.order === 'buy').length;
@@ -123,8 +133,9 @@ const client = new MongoClient(uri, {
           var dateclean = moment(date).locale('id').format('DD');
           var monthclean = moment(date).locale('id').format('MMM');
           var yearclean = moment(date).locale('id').format('YYYY');
+          // XAUUSD Insert Signal
           if (signaldate === datadate) {
-            console.log('Signal has been updated. Exiting script.');
+            console.log('XAUUSD signal has been updated. Exiting script.');
           } else {
             var signalid = countbuy + countsell;
             var outlookname = dateclean + '_' + monthclean + '_' + yearclean + '_' + 'DAILY_MARKET_OUTLOOK_';
@@ -136,8 +147,15 @@ const client = new MongoClient(uri, {
                 console.log('Something bad happened. Rerun script.');
                 getSignal();
               }
+              // XAUUSD
               var pdfResult = JSON.stringify(pages[4].slice(0, -212));
               var pdfResultLength = pdfResult.length;
+              // Crude Oil
+              var clrpdfResult = JSON.stringify(pages[4].slice(0, -212));
+              var clrpdfResultLength = clrpdfResult.length;
+              // USDJPY
+              var ujpypdfResult = JSON.stringify(pages[4].slice(0, -212));
+              var ujpypdfResultLength = ujpypdfResult.length;
               if (pdfResultLength === 206) {
                 // XAUUSD Sell
                 var xauusd_signals = [];
@@ -159,7 +177,7 @@ const client = new MongoClient(uri, {
                 }
                 xauusd_signals.push(xausignalobj);
                 localStorage.setItem('sigdata', JSON.stringify(xauusd_signals));
-                Uploadthesig().catch(console.dir);
+                UploadXAU().catch(console.dir);
               } else if (pdfResultLength === 214) {
                 // XAUUSD Buy
                 var xauusd_signals = [];
@@ -177,13 +195,11 @@ const client = new MongoClient(uri, {
                     'stoploss': signalsl,
                     'takeprofit1': signaltp1,
                     'takeprofit2': signaltp2
-                  }]
+                  }],
                 }
                 xauusd_signals.push(xausignalobj);
                 localStorage.setItem('sigdata', JSON.stringify(xauusd_signals));
-                Uploadthesig().catch(console.dir);
-              } else {
-                console.log("No case, well done!");
+                UploadXAU().catch(console.dir);
               }
             });
           }
@@ -198,7 +214,7 @@ const client = new MongoClient(uri, {
   getSignal();
 })();
 
-async function Uploadthesig() {
+async function UploadXAU() {
   var sigdata = localStorage.getItem('sigdata');
   insertsig = JSON.parse(sigdata)[0]['xauusd_signals'][0];
   try {
