@@ -56,17 +56,17 @@ const client = new MongoClient(uri, {
       const path = './market-outlook/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf';
       fs.access(path, fs.F_OK, (err) => {
         if (err == null) {
-          console.log('Signal report has been downloaded.');
+          console.log('Trading suggestions for today have not been published.');
           return;
         } else {
-          console.log('Signal report is not exist for this day, downloading.');
+          console.log('Downloading trading suggestions for today.');
           // Downloading Data
           download('https://research.valbury.co.id/resources/files/vaf/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf', './market-outlook')
             .on('close', function () {
               console.log('Download almost done...');
             })
             .on('done', function () {
-              console.log('Download complete. Proceeding inserting signal data to database.');
+              console.log('Download complete. Proceeding adding data to database.');
             });
         }
       });
@@ -179,13 +179,21 @@ const client = new MongoClient(uri, {
                 localStorage.setItem('sigdata', JSON.stringify(xauusd_signals));
                 UploadXAU().catch(console.dir);
               } else if (pdfResultLength === 214) {
+                if (pdfResult.substring(1, 2) === 'S') {
+                  var signalorder = pdfResult.substring(1, 5).toLocaleLowerCase();
+                  var signalprice = pdfResult.substring(17, 24);
+                  var signalsl = pdfResult.substring(71, 78);
+                  var signaltp1 = pdfResult.substring(125, 132);
+                  var signaltp2 = pdfResult.substring(179, 186);
+                } else {
+                  var signalorder = pdfResult.substring(1, 4).toLocaleLowerCase();
+                  var signalprice = pdfResult.substring(17, 24);
+                  var signalsl = pdfResult.substring(71, 78);
+                  var signaltp1 = pdfResult.substring(125, 132);
+                  var signaltp2 = pdfResult.substring(179, 186);
+                }
                 // XAUUSD Buy
                 var xauusd_signals = [];
-                var signalorder = pdfResult.substring(1, 4).toLocaleLowerCase();
-                var signalprice = pdfResult.substring(17, 24);
-                var signalsl = pdfResult.substring(71, 78);
-                var signaltp1 = pdfResult.substring(125, 132);
-                var signaltp2 = pdfResult.substring(179, 186);
                 var xausignalobj = {
                   'xauusd_signals': [{
                     'id': signalid,
