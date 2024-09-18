@@ -56,7 +56,7 @@ const client = new MongoClient(uri, {
       const path = './market-outlook/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf';
       fs.access(path, fs.F_OK, (err) => {
         if (err == null) {
-          console.log('Trading suggestions for today have not been published.');
+          console.log('Trading suggestions for today have not been published or already downloaded.');
           return;
         } else {
           console.log('Downloading trading suggestions for today.');
@@ -122,7 +122,7 @@ const client = new MongoClient(uri, {
         // USDJPY
         var ujpyparse = JSON.parse(valburyjson)['document']['usdjpy_signals'];
         if (valburyparse == undefined || valburyparse.length == 0) {
-          console.log('Could not find previous XAUUSD signal data.');
+          console.log('Could not find previous XAU/USD signal data.');
         } else {
           const xausig = JSON.parse(valburyjson)['document']['xauusd_signals'];
           const countbuy = xausig.filter(item => item.order === 'buy').length;
@@ -135,7 +135,7 @@ const client = new MongoClient(uri, {
           var yearclean = moment(date).locale('id').format('YYYY');
           // XAUUSD Insert Signal
           if (signaldate === datadate) {
-            console.log('XAUUSD signal has been updated. Exiting script.');
+            console.log('XAU/USD signal has been updated. Exiting script.');
           } else {
             var signalid = countbuy + countsell;
             var outlookname = dateclean + '_' + monthclean + '_' + yearclean + '_' + 'DAILY_MARKET_OUTLOOK_';
