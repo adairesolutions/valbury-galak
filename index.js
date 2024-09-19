@@ -218,8 +218,9 @@ const client = new MongoClient(uri, {
       });
   };
   // Run Function
-  getPDF();
-  getSignal();
+  Promise.all([getPDF(), getSignal()]).then(function () {
+    console.log("Initializing...");
+  });
 })();
 
 async function UploadXAU() {
