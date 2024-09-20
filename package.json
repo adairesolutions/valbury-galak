@@ -13,7 +13,7 @@
     "moment": "^2.30.1",
     "mongodb": "^6.8.1",
     "node-localstorage": "^3.0.5",
-    "pdf-text-extract": "^1.5.0",
-    "url-download": "^0.0.8"
+    "nodejs-file-downloader": "^4.13.0",
+    "pdf-text-extract": "^1.5.0"
   }
 }

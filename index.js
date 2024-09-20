@@ -1,5 +1,5 @@
 const moment = require('moment');
-const download = require('url-download');
+const { Downloader } = require("nodejs-file-downloader");
 const extract = require('pdf-text-extract');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = "mongodb+srv://geraldzandisko:Ah7klEx0MBidohg2@adairesolution-cluster.86e4g.mongodb.net/?retryWrites=true&w=majority&appName=adairesolution-cluster";
@@ -54,20 +54,23 @@ const client = new MongoClient(uri, {
     } else {
       // Get Outlook Folder Path
       const path = './market-outlook/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf';
-      fs.access(path, fs.F_OK, (err) => {
+      fs.access(path, fs.F_OK, async (err) => {
         if (err == null) {
           console.log('Trading suggestions for today have not been published or already downloaded.');
           return;
         } else {
+          // Downloading
           console.log('Downloading trading suggestions for today.');
-          // Downloading Data
-          download('https://research.valbury.co.id/resources/files/vaf/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf', './market-outlook')
-            .on('close', function () {
-              console.log('Download almost done...');
-            })
-            .on('done', function () {
-              console.log('Download complete. Proceeding adding data to database.');
-            });
+          const downloader = new Downloader({
+            url: 'https://research.valbury.co.id/resources/files/vaf/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf',
+            directory: "./market-outlook",
+          });
+          try {
+            const { filePath, downloadStatus } = await downloader.download();
+            console.log("Download finished.");
+          } catch (error) {
+            console.log("Download failed.", error);
+          }
         }
       });
     }
