@@ -66,7 +66,7 @@ const client = new MongoClient(uri, {
             directory: "./market-outlook",
           });
           try {
-            const { filePath, downloadStatus } = await downloader.download();
+            await downloader.download();
             console.log("Download finished.");
           } catch (error) {
             console.log("Download failed.", error);
@@ -147,8 +147,9 @@ const client = new MongoClient(uri, {
             const filePath = path.join(__dirname, './market-outlook/' + outlookname + '.pdf');
             extract(filePath, function (err, pages) {
               if (err) {
-                console.log('Something bad happened. Rerun script.');
-                getSignal();
+                err = "Cannot find report file or the downloaded file is corrupted. Please restart the script."
+                console.log(err);
+                return;
               }
               // XAUUSD
               var pdfResult = JSON.stringify(pages[4].slice(0, -212));
@@ -221,9 +222,7 @@ const client = new MongoClient(uri, {
       });
   };
   // Run Function
-  Promise.all([getPDF(), getSignal()]).then(function () {
-    console.log("Initializing...");
-  });
+  Promise.all([getPDF(), getSignal()]);
 })();
 
 async function UploadXAU() {
