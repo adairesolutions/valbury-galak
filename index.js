@@ -9,6 +9,7 @@ if (typeof localStorage === "undefined" || localStorage === null) {
   var LocalStorage = require('node-localstorage').LocalStorage;
   localStorage = new LocalStorage('./scratch');
 }
+const { setTimeout } = require("timers/promises");
 
 // Moment Configuration
 moment.updateLocale('id', {
@@ -77,6 +78,7 @@ const client = new MongoClient(uri, {
   };
 
   const getSignal = async () => {
+    await setTimeout(10000);
     // Get Time and Date
     const url = "https://timeapi.io/api/time/current/zone?timeZone=Asia%2FJakarta";
     try {
