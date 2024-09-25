@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "fetch": "node index.js && node clr-index.js"
+    "fetch": "node xauusd.js && node clr.js"
   },
   "author": "PT. The Adaire Solutions",
   "license": "ISC",
