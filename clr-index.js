@@ -57,11 +57,11 @@ const client = new MongoClient(uri, {
       const path = './market-outlook/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf';
       fs.access(path, fs.F_OK, async (err) => {
         if (err == null) {
-          console.log('XAU/USD trading suggestions for today have not been published or already downloaded.');
+          console.log('CLR trading suggestions for today have not been published or already downloaded.');
           return;
         } else {
           // Downloading
-          console.log('Downloading XAU/USD trading suggestions for today.');
+          console.log('Downloading CLR trading suggestions for today.');
           const downloader = new Downloader({
             url: 'https://research.valbury.co.id/resources/files/vaf/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf',
             directory: "./market-outlook",
@@ -98,9 +98,7 @@ const client = new MongoClient(uri, {
       "dataSource": "adairesolution-cluster",
       "projection": {
         "_id": 0,
-        "xauusd_signals": 1,
         "clr_signals": 1,
-        "usdjpy_signals": 1
       }
     });
     // MongoDB Configs
@@ -120,16 +118,12 @@ const client = new MongoClient(uri, {
         var valburysignal = response.data;
         var valburyjson = JSON.stringify(valburysignal);
         // Signal Array
-        // XAUUSD
-        var valburyparse = JSON.parse(valburyjson)['document']['xauusd_signals'];
-        // Crude Oil
-        var clrparse = JSON.parse(valburyjson)['document']['clr_signals'];
-        // USDJPY
-        var ujpyparse = JSON.parse(valburyjson)['document']['usdjpy_signals'];
+        // CLR
+        var valburyparse = JSON.parse(valburyjson)['document']['clr_signals'];
         if (valburyparse == undefined || valburyparse.length == 0) {
-          console.log('Could not find previous XAU/USD signal data.');
+          console.log('Could not find previous CLR signal data.');
         } else {
-          const xausig = JSON.parse(valburyjson)['document']['xauusd_signals'];
+          const xausig = JSON.parse(valburyjson)['document']['clr_signals'];
           const countbuy = xausig.filter(item => item.order === 'buy').length;
           const countsell = xausig.filter(item => item.order === 'sell').length;
           var date = datenow;
@@ -138,9 +132,9 @@ const client = new MongoClient(uri, {
           var dateclean = moment(date).locale('id').format('DD');
           var monthclean = moment(date).locale('id').format('MMM');
           var yearclean = moment(date).locale('id').format('YYYY');
-          // XAUUSD Insert Signal
+          // CLR Insert Signal
           if (signaldate === datadate) {
-            console.log('XAU/USD signal has been updated. Exiting script.');
+            console.log('CLR signal has been updated. Exiting script.');
           } else {
             var signalid = countbuy + countsell;
             var outlookname = dateclean + '_' + monthclean + '_' + yearclean + '_' + 'DAILY_MARKET_OUTLOOK_';
@@ -153,19 +147,14 @@ const client = new MongoClient(uri, {
                 console.log(err);
                 return;
               }
-              // XAUUSD
-              var pdfResult = JSON.stringify(pages[4].slice(0, -212));
+              // CLR
+              var pdfResult = JSON.stringify(pages[4].slice(0, 206));
               var pdfResultLength = pdfResult.length;
-              // Crude Oil
-              var clrpdfResult = JSON.stringify(pages[4].slice(0, -212));
-              var clrpdfResultLength = clrpdfResult.length;
-              // USDJPY
-              var ujpypdfResult = JSON.stringify(pages[4].slice(0, -212));
-              var ujpypdfResultLength = ujpypdfResult.length;
-              if (pdfResultLength === 206) {
-                // XAUUSD Sell
+              // console.log(pdfResultLength);
+              if (pdfResultLength === 214) {
+                // CLR Buy
                 var xauusd_signals = [];
-                var signalorder = pdfResult.substring(1, 5).toLocaleLowerCase();
+                var signalorder = pdfResult.substring(1, 4).toLocaleLowerCase();
                 var signalprice = pdfResult.substring(17, 24);
                 var signalsl = pdfResult.substring(71, 78);
                 var signaltp1 = pdfResult.substring(125, 132);
@@ -180,36 +169,6 @@ const client = new MongoClient(uri, {
                     'takeprofit1': signaltp1,
                     'takeprofit2': signaltp2
                   }]
-                }
-                xauusd_signals.push(xausignalobj);
-                localStorage.setItem('sigdata', JSON.stringify(xauusd_signals));
-                UploadXAU().catch(console.dir);
-              } else if (pdfResultLength === 214) {
-                if (pdfResult.substring(1, 2) === 'S') {
-                  var signalorder = pdfResult.substring(1, 5).toLocaleLowerCase();
-                  var signalprice = pdfResult.substring(17, 24);
-                  var signalsl = pdfResult.substring(71, 78);
-                  var signaltp1 = pdfResult.substring(125, 132);
-                  var signaltp2 = pdfResult.substring(179, 186);
-                } else {
-                  var signalorder = pdfResult.substring(1, 4).toLocaleLowerCase();
-                  var signalprice = pdfResult.substring(17, 24);
-                  var signalsl = pdfResult.substring(71, 78);
-                  var signaltp1 = pdfResult.substring(125, 132);
-                  var signaltp2 = pdfResult.substring(179, 186);
-                }
-                // XAUUSD Buy
-                var xauusd_signals = [];
-                var xausignalobj = {
-                  'xauusd_signals': [{
-                    'id': signalid,
-                    'date': signaldate,
-                    'order': signalorder,
-                    'price': signalprice,
-                    'stoploss': signalsl,
-                    'takeprofit1': signaltp1,
-                    'takeprofit2': signaltp2
-                  }],
                 }
                 xauusd_signals.push(xausignalobj);
                 localStorage.setItem('sigdata', JSON.stringify(xauusd_signals));
@@ -240,7 +199,7 @@ async function UploadXAU() {
       },
       {
         $push: {
-          "xauusd_signals": {
+          "clr_signals": {
             "id": insertsig.id, "date": insertsig.date, "order": insertsig.order, "price": insertsig.price, "stoploss": insertsig.stoploss, "takeprofit1": insertsig.takeprofit1, "takeprofit2": insertsig.takeprofit2
           }
         }
@@ -250,5 +209,5 @@ async function UploadXAU() {
     await client.close();
   }
   localStorage.clear();
-  console.log("New XAU/USD signal has been added!");
+  console.log("New CLR signal has been added!");
 };
