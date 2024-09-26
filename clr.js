@@ -51,14 +51,12 @@ const client = new MongoClient(uri, {
     var dayget = moment(date).locale('id').format('dddd');
     if (dayget === 'Sabtu' || dayget === 'Minggu') {
       console.log("Market closed.");
-      return;
     } else {
       // Get Outlook Folder Path
       const path = './market-outlook/' + dateget + '_' + monthget + '_' + yearget + '_DAILY_MARKET_OUTLOOK_.pdf';
       fs.access(path, fs.F_OK, async (err) => {
         if (err == null) {
           console.log('CLR trading suggestions for today have not been published or already downloaded.');
-          return;
         } else {
           // Downloading
           console.log('Downloading CLR trading suggestions for today.');
@@ -70,7 +68,7 @@ const client = new MongoClient(uri, {
             await downloader.download();
             console.log("Download finished.");
           } catch (error) {
-            console.log("Download failed.", error);
+            console.log("Download failed.");
           }
         }
       });
@@ -145,7 +143,6 @@ const client = new MongoClient(uri, {
               if (err) {
                 err = "Cannot find report file or the downloaded file is corrupted. Please restart the script."
                 console.log(err);
-                return;
               }
               // CLR
               var pdfResult = JSON.stringify(pages[4].slice(0, 206));
